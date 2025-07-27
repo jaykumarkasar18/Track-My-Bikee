@@ -1,0 +1,1431 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Track My Bike - Professional Bike Repair Service</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.10.3/dist/cdn.min.js" defer></script>
+    <style>
+        .bg-primary {
+            background-color: #4285F4;
+        }
+        .text-primary {
+            color: #4285F4;
+        }
+        .border-primary {
+            border-color: #4285F4;
+        }
+        .tab-active {
+            border-bottom: 3px solid #34A853;
+            color: #34A853;
+        }
+        .tab {
+            cursor: pointer;
+        }
+        .logo-text {
+            font-family: 'Arial', sans-serif;
+            font-weight: bold;
+            letter-spacing: 1px;
+        }
+        .section {
+            display: none;
+        }
+        .section.active {
+            display: block;
+        }
+        .fade-in {
+            animation: fadeIn 0.5s;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        .custom-shadow {
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        .feature-card:hover {
+            transform: translateY(-5px);
+            transition: transform 0.3s ease;
+        }
+        .google-btn {
+            background-color: #4285F4;
+            color: white;
+            border: none;
+            padding: 10px 16px;
+            border-radius: 4px;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+        }
+        .google-btn:hover {
+            background-color: #3367D6;
+        }
+        .google-icon {
+            background: white;
+            padding: 8px;
+            border-radius: 2px;
+            margin-right: 12px;
+        }
+        [x-cloak] { display: none !important; }
+    </style>
+</head>
+<body class="bg-gray-100 min-h-screen" x-data="appData()">
+    <!-- Navigation -->
+    <nav class="bg-primary text-white p-4 shadow-lg">
+        <div class="container mx-auto flex justify-between items-center">
+            <div class="flex items-center">
+                <div class="text-2xl logo-text">
+                    <i class="fas fa-bicycle mr-2"></i>
+                    <span>Track My Bike</span>
+                </div>
+            </div>
+            <div class="hidden md:flex space-x-6">
+                <a @click="setActiveTab('home')" class="hover:text-gray-300 cursor-pointer">Home</a>
+                <a @click="setActiveTab('book')" class="hover:text-gray-300 cursor-pointer">Book a Repair</a>
+                <a @click="setActiveTab('track')" class="hover:text-gray-300 cursor-pointer">Track My Bike</a>
+                <a @click="setActiveTab('contact')" class="hover:text-gray-300 cursor-pointer">Contact Us</a>
+                <a x-show="userLoggedIn" @click="setActiveTab('admin')" class="hover:text-gray-300 cursor-pointer">Admin</a>
+                <a x-show="!userLoggedIn" @click="showLoginModal = true" class="hover:text-gray-300 cursor-pointer">Login</a>
+                <a x-show="userLoggedIn" @click="logout" class="hover:text-gray-300 cursor-pointer">Logout</a>
+            </div>
+            <div class="md:hidden">
+                <button @click="mobileMenu = !mobileMenu" class="text-white focus:outline-none">
+                    <i class="fas fa-bars text-xl"></i>
+                </button>
+            </div>
+        </div>
+        <!-- Mobile Menu -->
+        <div x-show="mobileMenu" class="md:hidden bg-primary" x-transition>
+            <div class="flex flex-col space-y-3 py-3 px-4">
+                <a @click="setActiveTab('home'); mobileMenu = false" class="hover:text-gray-300 cursor-pointer">Home</a>
+                <a @click="setActiveTab('book'); mobileMenu = false" class="hover:text-gray-300 cursor-pointer">Book a Repair</a>
+                <a @click="setActiveTab('track'); mobileMenu = false" class="hover:text-gray-300 cursor-pointer">Track My Bike</a>
+                <a @click="setActiveTab('contact'); mobileMenu = false" class="hover:text-gray-300 cursor-pointer">Contact Us</a>
+                <a x-show="userLoggedIn" @click="setActiveTab('admin'); mobileMenu = false" class="hover:text-gray-300 cursor-pointer">Admin</a>
+                <a x-show="!userLoggedIn" @click="showLoginModal = true; mobileMenu = false" class="hover:text-gray-300 cursor-pointer">Login</a>
+                <a x-show="userLoggedIn" @click="logout(); mobileMenu = false" class="hover:text-gray-300 cursor-pointer">Logout</a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Login Modal -->
+    <div x-show="showLoginModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50" x-cloak>
+        <div @click.away="showLoginModal = false" class="bg-white rounded-lg shadow-xl w-full max-w-md overflow-hidden">
+            <div class="bg-primary text-white px-6 py-4 flex justify-between items-center">
+                <h2 class="text-xl font-bold">Login to Track My Bike</h2>
+                <button @click="showLoginModal = false" class="text-white hover:text-gray-300 focus:outline-none">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+            </div>
+            <div class="p-6">
+                <div class="mb-6">
+                    <button @click="loginWithGoogle" class="google-btn w-full">
+                        <div class="google-icon">
+                            <i class="fab fa-google"></i>
+                        </div>
+                        Sign in with Google
+                    </button>
+                </div>
+                
+                <div class="relative flex py-4 items-center">
+                    <div class="flex-grow border-t border-gray-300"></div>
+                    <span class="flex-shrink mx-4 text-gray-500">or</span>
+                    <div class="flex-grow border-t border-gray-300"></div>
+                </div>
+                
+                <form @submit.prevent="loginWithEmail">
+                    <div class="mb-4">
+                        <label class="block text-gray-700 mb-2">Email *</label>
+                        <input type="email" x-model="loginForm.email" required class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+                    <div class="mb-6">
+                        <label class="block text-gray-700 mb-2">Password *</label>
+                        <input type="password" x-model="loginForm.password" required class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+                    <div x-show="loginError" class="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mb-4 fade-in">
+                        <div class="flex">
+                            <div class="flex-shrink-0">
+                                <i class="fas fa-exclamation-triangle"></i>
+                            </div>
+                            <div class="ml-3">
+                                <p class="text-sm" x-text="loginError"></p>
+                            </div>
+                        </div>
+                    </div>
+                    <button type="submit" class="w-full bg-primary text-white px-6 py-2 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        Login
+                    </button>
+                </form>
+                
+                <div class="mt-4 text-center">
+                    <p class="text-gray-600">Don't have an account? <a @click="showRegisterModal = true; showLoginModal = false" class="text-primary cursor-pointer">Register</a></p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Register Modal -->
+    <div x-show="showRegisterModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50" x-cloak>
+        <div @click.away="showRegisterModal = false" class="bg-white rounded-lg shadow-xl w-full max-w-md overflow-hidden">
+            <div class="bg-primary text-white px-6 py-4 flex justify-between items-center">
+                <h2 class="text-xl font-bold">Create an Account</h2>
+                <button @click="showRegisterModal = false" class="text-white hover:text-gray-300 focus:outline-none">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+            </div>
+            <div class="p-6">
+                <div class="mb-6">
+                    <button @click="loginWithGoogle" class="google-btn w-full">
+                        <div class="google-icon">
+                            <i class="fab fa-google"></i>
+                        </div>
+                        Sign up with Google
+                    </button>
+                </div>
+                
+                <div class="relative flex py-4 items-center">
+                    <div class="flex-grow border-t border-gray-300"></div>
+                    <span class="flex-shrink mx-4 text-gray-500">or</span>
+                    <div class="flex-grow border-t border-gray-300"></div>
+                </div>
+                
+                <form @submit.prevent="registerWithEmail">
+                    <div class="mb-4">
+                        <label class="block text-gray-700 mb-2">Full Name *</label>
+                        <input type="text" x-model="registerForm.name" required class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+                    <div class="mb-4">
+                        <label class="block text-gray-700 mb-2">Email *</label>
+                        <input type="email" x-model="registerForm.email" required class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+                    <div class="mb-4">
+                        <label class="block text-gray-700 mb-2">Password *</label>
+                        <input type="password" x-model="registerForm.password" required class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+                    <div class="mb-6">
+                        <label class="block text-gray-700 mb-2">Confirm Password *</label>
+                        <input type="password" x-model="registerForm.confirmPassword" required class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+                    <div x-show="registerError" class="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mb-4 fade-in">
+                        <div class="flex">
+                            <div class="flex-shrink-0">
+                                <i class="fas fa-exclamation-triangle"></i>
+                            </div>
+                            <div class="ml-3">
+                                <p class="text-sm" x-text="registerError"></p>
+                            </div>
+                        </div>
+                    </div>
+                    <button type="submit" class="w-full bg-primary text-white px-6 py-2 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        Register
+                    </button>
+                </form>
+                
+                <div class="mt-4 text-center">
+                    <p class="text-gray-600">Already have an account? <a @click="showLoginModal = true; showRegisterModal = false" class="text-primary cursor-pointer">Login</a></p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="container mx-auto p-4">
+        <!-- Home Section -->
+        <div id="home" class="section fade-in" :class="{'active': activeTab === 'home'}">
+            <div class="bg-white rounded-lg shadow-lg p-6 mb-6">
+                <h1 class="text-3xl font-bold text-primary mb-4">Welcome to Track My Bike</h1>
+                <p class="text-gray-600 mb-4">
+                    Your trusted service for tracking bike repairs and maintenance. Monitor your bike's repair status in real-time and get notified when it's ready.
+                </p>
+                <div x-show="!userLoggedIn" class="flex space-x-4">
+                    <button @click="showLoginModal = true" class="bg-primary text-white px-4 py-2 rounded inline-block cursor-pointer hover:bg-blue-700">
+                        Login to Track Your Bike
+                    </button>
+                    <button @click="setActiveTab('book')" class="bg-green-600 text-white px-4 py-2 rounded inline-block cursor-pointer hover:bg-green-700">
+                        Book a Repair
+                    </button>
+                </div>
+                <div x-show="userLoggedIn" class="flex space-x-4">
+                    <button @click="setActiveTab('track')" class="bg-primary text-white px-4 py-2 rounded inline-block cursor-pointer hover:bg-blue-700">
+                        Track My Bike
+                    </button>
+                    <button @click="setActiveTab('book')" class="bg-green-600 text-white px-4 py-2 rounded inline-block cursor-pointer hover:bg-green-700">
+                        Book a Repair
+                    </button>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+                <div class="bg-white rounded-lg p-6 shadow custom-shadow feature-card">
+                    <div class="text-4xl text-blue-500 mb-4">
+                        <i class="fas fa-map-marker-alt"></i>
+                    </div>
+                    <h3 class="text-xl font-semibold mb-2">Real-time Tracking</h3>
+                    <p class="text-gray-600">Monitor your bike's repair status from anywhere with our online tracking system.</p>
+                </div>
+                <div class="bg-white rounded-lg p-6 shadow custom-shadow feature-card">
+                    <div class="text-4xl text-blue-500 mb-4">
+                        <i class="fas fa-bell"></i>
+                    </div>
+                    <h3 class="text-xl font-semibold mb-2">Instant Notifications</h3>
+                    <p class="text-gray-600">Get alerts when your bike moves to the next repair stage or is ready for pickup.</p>
+                </div>
+                <div class="bg-white rounded-lg p-6 shadow custom-shadow feature-card">
+                    <div class="text-4xl text-blue-500 mb-4">
+                        <i class="fas fa-history"></i>
+                    </div>
+                    <h3 class="text-xl font-semibold mb-2">Repair History</h3>
+                    <p class="text-gray-600">Access your complete repair history to track maintenance and costs over time.</p>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-lg shadow-lg p-6">
+                <h2 class="text-2xl font-bold text-primary mb-4">How It Works</h2>
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                    <div class="text-center p-4">
+                        <div class="bg-blue-100 rounded-full h-16 w-16 flex items-center justify-center mx-auto mb-3">
+                            <i class="fas fa-sign-in-alt text-blue-500 text-2xl"></i>
+                        </div>
+                        <h3 class="font-semibold mb-2">Login</h3>
+                        <p class="text-gray-600 text-sm">Sign in with your Google account or register</p>
+                    </div>
+                    <div class="text-center p-4">
+                        <div class="bg-blue-100 rounded-full h-16 w-16 flex items-center justify-center mx-auto mb-3">
+                            <i class="fas fa-clipboard-list text-blue-500 text-2xl"></i>
+                        </div>
+                        <h3 class="font-semibold mb-2">Book Service</h3>
+                        <p class="text-gray-600 text-sm">Schedule your bike repair appointment</p>
+                    </div>
+                    <div class="text-center p-4">
+                        <div class="bg-blue-100 rounded-full h-16 w-16 flex items-center justify-center mx-auto mb-3">
+                            <i class="fas fa-search text-blue-500 text-2xl"></i>
+                        </div>
+                        <h3 class="font-semibold mb-2">Track Progress</h3>
+                        <p class="text-gray-600 text-sm">Monitor each stage of your repair</p>
+                    </div>
+                    <div class="text-center p-4">
+                        <div class="bg-blue-100 rounded-full h-16 w-16 flex items-center justify-center mx-auto mb-3">
+                            <i class="fas fa-check-circle text-blue-500 text-2xl"></i>
+                        </div>
+                        <h3 class="font-semibold mb-2">Pick Up</h3>
+                        <p class="text-gray-600 text-sm">Get notified when your bike is ready</p>
+                    </div>
+                </div>
+                <div class="text-center mt-6">
+                    <button x-show="!userLoggedIn" @click="showLoginModal = true" class="bg-primary text-white px-6 py-2 rounded inline-block cursor-pointer hover:bg-blue-700">
+                        Get Started
+                    </button>
+                    <button x-show="userLoggedIn" @click="setActiveTab('track')" class="bg-primary text-white px-6 py-2 rounded inline-block cursor-pointer hover:bg-blue-700">
+                        Track My Bike
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Book a Repair Section -->
+        <div id="book" class="section fade-in" :class="{'active': activeTab === 'book'}">
+            <div x-show="!userLoggedIn" class="bg-white rounded-lg shadow-lg p-6 mb-6 text-center">
+                <h2 class="text-2xl font-bold text-primary mb-4">Please Login to Book a Repair</h2>
+                <p class="text-gray-600 mb-6">You need to be logged in to book a bike repair service.</p>
+                <button @click="showLoginModal = true" class="bg-primary text-white px-6 py-2 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    Login Now
+                </button>
+            </div>
+
+            <div x-show="userLoggedIn" class="bg-white rounded-lg shadow-lg p-6 mb-6">
+                <h1 class="text-3xl font-bold text-primary mb-4">Book a Repair</h1>
+                <p class="text-gray-600 mb-6">Fill in the details below to book your bike repair service.</p>
+
+                <form @submit.prevent="submitRepair">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                        <div>
+                            <label class="block text-gray-700 mb-2">Full Name *</label>
+                            <input type="text" x-model="booking.name" required class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        </div>
+                        <div>
+                            <label class="block text-gray-700 mb-2">Phone Number *</label>
+                            <input type="tel" x-model="booking.phone" required class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        </div>
+                        <div>
+                            <label class="block text-gray-700 mb-2">Email Address *</label>
+                            <input type="email" x-model="booking.email" required class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        </div>
+                        <div>
+                            <label class="block text-gray-700 mb-2">Preferred Date *</label>
+                            <input type="date" x-model="booking.date" required class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        </div>
+                        <div>
+                            <label class="block text-gray-700 mb-2">Bike Make *</label>
+                            <input type="text" x-model="booking.make" required class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        </div>
+                        <div>
+                            <label class="block text-gray-700 mb-2">Bike Model *</label>
+                            <input type="text" x-model="booking.model" required class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        </div>
+                        <div>
+                            <label class="block text-gray-700 mb-2">Registration Number (if any)</label>
+                            <input type="text" x-model="booking.registrationNumber" class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        </div>
+                        <div>
+                            <label class="block text-gray-700 mb-2">Bike Year</label>
+                            <input type="number" x-model="booking.year" class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        </div>
+                    </div>
+
+                    <div class="mb-6">
+                        <label class="block text-gray-700 mb-2">Problem Category *</label>
+                        <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+                            <div class="flex items-center">
+                                <input type="checkbox" x-model="booking.problemCategories" value="Brakes" class="mr-2">
+                                <span>Brakes</span>
+                            </div>
+                            <div class="flex items-center">
+                                <input type="checkbox" x-model="booking.problemCategories" value="Gears/Transmission" class="mr-2">
+                                <span>Gears/Transmission</span>
+                            </div>
+                            <div class="flex items-center">
+                                <input type="checkbox" x-model="booking.problemCategories" value="Wheels/Tires" class="mr-2">
+                                <span>Wheels/Tires</span>
+                            </div>
+                            <div class="flex items-center">
+                                <input type="checkbox" x-model="booking.problemCategories" value="Frame" class="mr-2">
+                                <span>Frame</span>
+                            </div>
+                            <div class="flex items-center">
+                                <input type="checkbox" x-model="booking.problemCategories" value="Chain" class="mr-2">
+                                <span>Chain</span>
+                            </div>
+                            <div class="flex items-center">
+                                <input type="checkbox" x-model="booking.problemCategories" value="Suspension" class="mr-2">
+                                <span>Suspension</span>
+                            </div>
+                            <div class="flex items-center">
+                                <input type="checkbox" x-model="booking.problemCategories" value="Electrical" class="mr-2">
+                                <span>Electrical (E-Bikes)</span>
+                            </div>
+                            <div class="flex items-center">
+                                <input type="checkbox" x-model="booking.problemCategories" value="Other" class="mr-2">
+                                <span>Other</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mb-6">
+                        <label class="block text-gray-700 mb-2">Describe the Problem in Detail *</label>
+                        <textarea x-model="booking.problemDescription" rows="5" required class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"></textarea>
+                    </div>
+
+                    <div class="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-4 mb-6">
+                        <div class="flex">
+                            <div class="flex-shrink-0">
+                                <i class="fas fa-info-circle"></i>
+                            </div>
+                            <div class="ml-3">
+                                <p class="text-sm">
+                                    After submission, our mechanics will diagnose your bike and provide you with a detailed cost estimate. Pricing is determined by our expert staff based on parts and labor required.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="flex justify-end">
+                        <button type="submit" class="bg-primary text-white px-6 py-2 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            Submit Repair Request
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <div x-show="bookingSubmitted" class="bg-white rounded-lg shadow-lg p-6 mt-6 fade-in">
+                <div class="text-center mb-6">
+                    <div class="inline-block p-3 rounded-full bg-green-100 text-green-500 mb-4">
+                        <i class="fas fa-check-circle text-4xl"></i>
+                    </div>
+                    <h2 class="text-2xl font-bold text-gray-800">Booking Submitted Successfully!</h2>
+                    <p class="text-gray-600 mt-2">Thank you for choosing Track My Bike for your repair needs.</p>
+                </div>
+
+                <div class="bg-gray-50 p-6 rounded-lg mb-6">
+                    <h3 class="font-bold text-lg mb-3">Your Booking Details:</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <p class="text-gray-600">Booking ID:</p>
+                            <p class="font-semibold" x-text="generatedBookingId"></p>
+                        </div>
+                        <div>
+                            <p class="text-gray-600">Name:</p>
+                            <p class="font-semibold" x-text="booking.name"></p>
+                        </div>
+                        <div>
+                            <p class="text-gray-600">Bike:</p>
+                            <p class="font-semibold" x-text="booking.make + ' ' + booking.model"></p>
+                        </div>
+                        <div>
+                            <p class="text-gray-600">Preferred Date:</p>
+                            <p class="font-semibold" x-text="booking.date"></p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-blue-50 border-l-4 border-blue-500 text-blue-700 p-4 mb-6">
+                    <div class="flex">
+                        <div class="flex-shrink-0">
+                            <i class="fas fa-info-circle"></i>
+                        </div>
+                        <div class="ml-3">
+                            <p class="font-bold">What happens next?</p>
+                            <p class="text-sm">
+                                1. Our technicians will examine your bike and diagnose the issue<br>
+                                2. We'll contact you with a detailed cost estimate<br>
+                                3. Upon your approval, we'll proceed with the repairs<br>
+                                4. We'll notify you when your bike is ready for pickup
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="text-center">
+                    <p class="mb-4">You can track the status of your repair using your Booking ID</p>
+                    <button @click="setActiveTab('track')" class="bg-primary text-white px-6 py-2 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        Track My Repair
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Track My Bike Section -->
+        <div id="track" class="section fade-in" :class="{'active': activeTab === 'track'}">
+            <div x-show="!userLoggedIn" class="bg-white rounded-lg shadow-lg p-6 mb-6 text-center">
+                <h2 class="text-2xl font-bold text-primary mb-4">Please Login to Track Your Bike</h2>
+                <p class="text-gray-600 mb-6">You need to be logged in to track your bike repair status.</p>
+                <button @click="showLoginModal = true" class="bg-primary text-white px-6 py-2 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    Login Now
+                </button>
+            </div>
+
+            <div x-show="userLoggedIn" class="bg-white rounded-lg shadow-lg p-6 mb-6">
+                <h1 class="text-3xl font-bold text-primary mb-4">Track My Bike</h1>
+                <p class="text-gray-600 mb-6">Enter your booking ID to check the status of your repair.</p>
+
+                <form @submit.prevent="trackRepair" class="mb-6">
+                    <div class="flex flex-col md:flex-row gap-4">
+                        <div class="flex-grow">
+                            <input type="text" x-model="trackingId" placeholder="Enter your Booking ID (e.g., BM001)" required class="w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        </div>
+                        <div>
+                            <button type="submit" class="w-full md:w-auto bg-primary text-white px-6 py-3 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                Track Now
+                            </button>
+                        </div>
+                    </div>
+                </form>
+
+                <div x-show="trackingNotFound" class="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 fade-in">
+                    <div class="flex">
+                        <div class="flex-shrink-0">
+                            <i class="fas fa-exclamation-triangle"></i>
+                        </div>
+                        <div class="ml-3">
+                            <p class="font-bold">No record found</p>
+                            <p class="text-sm">The booking ID you entered doesn't match our records. Please check and try again.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div x-show="trackingResult && userLoggedIn" class="bg-white rounded-lg shadow-lg p-6 fade-in">
+                <div class="flex items-center justify-between mb-6">
+                    <h2 class="text-2xl font-bold text-primary">Repair Status</h2>
+                    <span class="text-sm bg-blue-100 text-blue-800 py-1 px-3 rounded-full" x-text="'Booking ID: ' + currentTracking.id"></span>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                    <div>
+                        <h3 class="font-semibold text-lg mb-3">Bike Information</h3>
+                        <div class="bg-gray-50 p-4 rounded-lg">
+                            <div class="mb-2">
+                                <span class="text-gray-600">Make:</span>
+                                <span class="font-medium ml-2" x-text="currentTracking.make"></span>
+                            </div>
+                            <div class="mb-2">
+                                <span class="text-gray-600">Model:</span>
+                                <span class="font-medium ml-2" x-text="currentTracking.model"></span>
+                            </div>
+                            <div class="mb-2">
+                                <span class="text-gray-600">Registration:</span>
+                                <span class="font-medium ml-2" x-text="currentTracking.registration || 'N/A'"></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div>
+                        <h3 class="font-semibold text-lg mb-3">Customer Details</h3>
+                        <div class="bg-gray-50 p-4 rounded-lg">
+                            <div class="mb-2">
+                                <span class="text-gray-600">Name:</span>
+                                <span class="font-medium ml-2" x-text="currentTracking.customerName"></span>
+                            </div>
+                            <div class="mb-2">
+                                <span class="text-gray-600">Phone:</span>
+                                <span class="font-medium ml-2" x-text="currentTracking.phone"></span>
+                            </div>
+                            <div>
+                                <span class="text-gray-600">Drop-off Date:</span>
+                                <span class="font-medium ml-2" x-text="currentTracking.date"></span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mb-8">
+                    <h3 class="font-semibold text-lg mb-4">Repair Progress</h3>
+                    <div class="relative">
+                        <div class="absolute inset-0 flex items-center" aria-hidden="true">
+                            <div class="w-full border-t border-gray-300"></div>
+                        </div>
+                        <div class="relative flex justify-between">
+                            <div class="flex flex-col items-center">
+                                <div class="flex items-center justify-center w-12 h-12 rounded-full" :class="currentTracking.status >= 1 ? 'bg-green-500' : 'bg-gray-200'">
+                                    <i class="fas fa-clipboard-check text-white"></i>
+                                </div>
+                                <div class="text-center mt-2">
+                                    <div class="font-medium">Received</div>
+                                    <div class="text-xs text-gray-500">Bike checked in</div>
+                                </div>
+                            </div>
+                            <div class="flex flex-col items-center">
+                                <div class="flex items-center justify-center w-12 h-12 rounded-full" :class="currentTracking.status >= 2 ? 'bg-green-500' : 'bg-gray-200'">
+                                    <i class="fas fa-search text-white"></i>
+                                </div>
+                                <div class="text-center mt-2">
+                                    <div class="font-medium">Diagnosed</div>
+                                    <div class="text-xs text-gray-500">Issues identified</div>
+                                </div>
+                            </div>
+                            <div class="flex flex-col items-center">
+                                <div class="flex items-center justify-center w-12 h-12 rounded-full" :class="currentTracking.status >= 3 ? 'bg-green-500' : 'bg-gray-200'">
+                                    <i class="fas fa-tools text-white"></i>
+                                </div>
+                                <div class="text-center mt-2">
+                                    <div class="font-medium">In Progress</div>
+                                    <div class="text-xs text-gray-500">Repairs ongoing</div>
+                                </div>
+                            </div>
+                            <div class="flex flex-col items-center">
+                                <div class="flex items-center justify-center w-12 h-12 rounded-full" :class="currentTracking.status >= 4 ? 'bg-green-500' : 'bg-gray-200'">
+                                    <i class="fas fa-check text-white"></i>
+                                </div>
+                                <div class="text-center mt-2">
+                                    <div class="font-medium">Completed</div>
+                                    <div class="text-xs text-gray-500">Ready for pickup</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mb-6">
+                    <h3 class="font-semibold text-lg mb-3">Repair Details</h3>
+                    <div class="bg-gray-50 p-4 rounded-lg">
+                        <div class="mb-3">
+                            <span class="text-gray-600">Issues Found:</span>
+                            <p class="mt-1" x-text="currentTracking.issues"></p>
+                        </div>
+                        <div class="mb-3">
+                            <span class="text-gray-600">Work Performed:</span>
+                            <p class="mt-1" x-text="currentTracking.workDone || 'Pending'"></p>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-3">
+                            <div>
+                                <span class="text-gray-600">Estimated Completion:</span>
+                                <p class="font-medium" x-text="currentTracking.estimatedCompletion"></p>
+                            </div>
+                            <div>
+                                <span class="text-gray-600">Status:</span>
+                                <p class="font-medium" x-text="getStatusText(currentTracking.status)"></p>
+                            </div>
+                        </div>
+                        <div x-show="currentTracking.cost && currentTracking.status >= 2">
+                            <span class="text-gray-600">Repair Cost:</span>
+                            <p class="font-bold text-lg" x-text="'$' + currentTracking.cost"></p>
+                            <p class="text-sm text-gray-500 mt-1">Cost determined after diagnosis by our technicians</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div x-show="currentTracking.status >= 4" class="bg-green-100 border-l-4 border-green-500 text-green-700 p-4 mb-6">
+                    <div class="flex">
+                        <div class="flex-shrink-0">
+                            <i class="fas fa-check-circle"></i>
+                        </div>
+                        <div class="ml-3">
+                            <p class="font-bold">Your bike is ready for pickup!</p>
+                            <p class="text-sm">Please bring your booking ID and payment to collect your bike.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div x-show="currentTracking.status < 4" class="bg-blue-100 border-l-4 border-blue-500 text-blue-700 p-4">
+                    <div class="flex">
+                        <div class="flex-shrink-0">
+                            <i class="fas fa-info-circle"></i>
+                        </div>
+                        <div class="ml-3">
+                            <p class="text-sm">We'll notify you via email/phone when your bike is ready. For any questions, please contact our service desk.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Contact Us Section -->
+        <div id="contact" class="section fade-in" :class="{'active': activeTab === 'contact'}">
+            <div class="bg-white rounded-lg shadow-lg p-6 mb-6">
+                <h1 class="text-3xl font-bold text-primary mb-4">Contact Us</h1>
+                <p class="text-gray-600 mb-6">We're here to help! Reach out to us with any questions or concerns.</p>
+
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                    <div class="bg-gray-50 p-5 rounded-lg text-center">
+                        <div class="text-3xl text-blue-500 mb-3">
+                            <i class="fas fa-map-marker-alt"></i>
+                        </div>
+                        <h3 class="font-semibold text-lg mb-2">Our Location</h3>
+                        <p class="text-gray-600">123 Bike Street<br>Mechanic Town, BK 12345</p>
+                    </div>
+                    <div class="bg-gray-50 p-5 rounded-lg text-center">
+                        <div class="text-3xl text-blue-500 mb-3">
+                            <i class="fas fa-phone-alt"></i>
+                        </div>
+                        <h3 class="font-semibold text-lg mb-2">Phone</h3>
+                        <p class="text-gray-600">(555) 123-4567</p>
+                        <p class="text-gray-500 text-sm">Mon-Fri: 9AM-6PM<br>Sat: 10AM-4PM</p>
+                    </div>
+                    <div class="bg-gray-50 p-5 rounded-lg text-center">
+                        <div class="text-3xl text-blue-500 mb-3">
+                            <i class="fas fa-envelope"></i>
+                        </div>
+                        <h3 class="font-semibold text-lg mb-2">Email</h3>
+                        <p class="text-gray-600">service@trackmybike.example.com</p>
+                        <p class="text-gray-500 text-sm">We'll respond within 24 hours</p>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <div>
+                        <h2 class="text-2xl font-bold text-primary mb-4">Send Us a Message</h2>
+                        <form @submit.prevent="submitContact">
+                            <div class="mb-4">
+                                <label class="block text-gray-700 mb-2">Your Name *</label>
+                                <input type="text" x-model="contact.name" required class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            </div>
+                            <div class="mb-4">
+                                <label class="block text-gray-700 mb-2">Email Address *</label>
+                                <input type="email" x-model="contact.email" required class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            </div>
+                            <div class="mb-4">
+                                <label class="block text-gray-700 mb-2">Subject *</label>
+                                <input type="text" x-model="contact.subject" required class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            </div>
+                            <div class="mb-4">
+                                <label class="block text-gray-700 mb-2">Message *</label>
+                                <textarea x-model="contact.message" rows="5" required class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"></textarea>
+                            </div>
+                            <button type="submit" class="bg-primary text-white px-6 py-2 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                Send Message
+                            </button>
+                        </form>
+                        <div x-show="contactSubmitted" class="mt-4 bg-green-100 border-l-4 border-green-500 text-green-700 p-4 fade-in">
+                            <div class="flex">
+                                <div class="flex-shrink-0">
+                                    <i class="fas fa-check-circle"></i>
+                                </div>
+                                <div class="ml-3">
+                                    <p class="font-bold">Message sent!</p>
+                                    <p class="text-sm">Thank you for reaching out. We'll get back to you soon.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div>
+                        <h2 class="text-2xl font-bold text-primary mb-4">Business Hours</h2>
+                        <div class="bg-gray-50 p-5 rounded-lg">
+                            <div class="flex justify-between py-2 border-b">
+                                <span class="font-medium">Monday</span>
+                                <span>9:00 AM - 6:00 PM</span>
+                            </div>
+                            <div class="flex justify-between py-2 border-b">
+                                <span class="font-medium">Tuesday</span>
+                                <span>9:00 AM - 6:00 PM</span>
+                            </div>
+                            <div class="flex justify-between py-2 border-b">
+                                <span class="font-medium">Wednesday</span>
+                                <span>9:00 AM - 6:00 PM</span>
+                            </div>
+                            <div class="flex justify-between py-2 border-b">
+                                <span class="font-medium">Thursday</span>
+                                <span>9:00 AM - 6:00 PM</span>
+                            </div>
+                            <div class="flex justify-between py-2 border-b">
+                                <span class="font-medium">Friday</span>
+                                <span>9:00 AM - 6:00 PM</span>
+                            </div>
+                            <div class="flex justify-between py-2 border-b">
+                                <span class="font-medium">Saturday</span>
+                                <span>10:00 AM - 4:00 PM</span>
+                            </div>
+                            <div class="flex justify-between py-2">
+                                <span class="font-medium">Sunday</span>
+                                <span>Closed</span>
+                            </div>
+                        </div>
+                        
+                        <h2 class="text-2xl font-bold text-primary mt-6 mb-4">Find Us</h2>
+                        <div class="bg-gray-200 h-64 rounded-lg flex items-center justify-center">
+                            <div class="text-center">
+                                <i class="fas fa-map-marked-alt text-gray-400 text-4xl mb-2"></i>
+                                <p class="text-gray-600">Interactive Map Would Appear Here</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Admin Dashboard Section -->
+        <div id="admin" class="section fade-in" :class="{'active': activeTab === 'admin'}">
+            <div x-show="!userLoggedIn" class="bg-white rounded-lg shadow-lg p-6 mb-6 text-center">
+                <h2 class="text-2xl font-bold text-primary mb-4">Please Login to Access Admin Dashboard</h2>
+                <p class="text-gray-600 mb-6">You need admin privileges to access this section.</p>
+                <button @click="showLoginModal = true" class="bg-primary text-white px-6 py-2 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    Login Now
+                </button>
+            </div>
+
+            <div x-show="userLoggedIn" class="fade-in">
+                <div class="bg-white rounded-lg shadow-lg p-6 mb-6">
+                    <div class="flex justify-between items-center mb-6">
+                        <h1 class="text-3xl font-bold text-primary">Admin Dashboard</h1>
+                        <div class="flex items-center space-x-4">
+                            <span class="text-gray-700">Welcome, <span class="font-semibold" x-text="userName"></span></span>
+                            <button @click="logout" class="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500">
+                                Logout
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+                        <div class="bg-blue-50 border-l-4 border-blue-500 p-4 rounded-r-lg flex items-center">
+                            <div class="text-blue-500 text-2xl mr-3">
+                                <i class="fas fa-clipboard-list"></i>
+                            </div>
+                            <div>
+                                <div class="text-xs text-blue-700">Total Bookings</div>
+                                <div class="font-bold text-xl">24</div>
+                            </div>
+                        </div>
+                        <div class="bg-yellow-50 border-l-4 border-yellow-500 p-4 rounded-r-lg flex items-center">
+                            <div class="text-yellow-500 text-2xl mr-3">
+                                <i class="fas fa-tools"></i>
+                            </div>
+                            <div>
+                                <div class="text-xs text-yellow-700">In Progress</div>
+                                <div class="font-bold text-xl">8</div>
+                            </div>
+                        </div>
+                        <div class="bg-green-50 border-l-4 border-green-500 p-4 rounded-r-lg flex items-center">
+                            <div class="text-green-500 text-2xl mr-3">
+                                <i class="fas fa-check-circle"></i>
+                            </div>
+                            <div>
+                                <div class="text-xs text-green-700">Completed</div>
+                                <div class="font-bold text-xl">15</div>
+                            </div>
+                        </div>
+                        <div class="bg-purple-50 border-l-4 border-purple-500 p-4 rounded-r-lg flex items-center">
+                            <div class="text-purple-500 text-2xl mr-3">
+                                <i class="fas fa-calendar-day"></i>
+                            </div>
+                            <div>
+                                <div class="text-xs text-purple-700">Today's Pickups</div>
+                                <div class="font-bold text-xl">3</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div x-data="{activeTab: 'new'}" class="mb-6">
+                        <div class="border-b border-gray-200 mb-4">
+                            <ul class="flex flex-wrap -mb-px">
+                                <li class="mr-2">
+                                    <a @click="activeTab = 'new'" class="inline-block py-2 px-4 cursor-pointer" :class="activeTab === 'new' ? 'text-blue-600 border-b-2 border-blue-600' : 'text-gray-500 hover:text-gray-700'">
+                                        New Bookings
+                                    </a>
+                                </li>
+                                <li class="mr-2">
+                                    <a @click="activeTab = 'progress'" class="inline-block py-2 px-4 cursor-pointer" :class="activeTab === 'progress' ? 'text-blue-600 border-b-2 border-blue-600' : 'text-gray-500 hover:text-gray-700'">
+                                        In Progress
+                                    </a>
+                                </li>
+                                <li class="mr-2">
+                                    <a @click="activeTab = 'completed'" class="inline-block py-2 px-4 cursor-pointer" :class="activeTab === 'completed' ? 'text-blue-600 border-b-2 border-blue-600' : 'text-gray-500 hover:text-gray-700'">
+                                        Completed
+                                    </a>
+                                </li>
+                                <li class="mr-2">
+                                    <a @click="activeTab = 'all'" class="inline-block py-2 px-4 cursor-pointer" :class="activeTab === 'all' ? 'text-blue-600 border-b-2 border-blue-600' : 'text-gray-500 hover:text-gray-700'">
+                                        All Bookings
+                                    </a>
+                                </li>
+                            </ul>
+                        </div>
+
+                        <div x-show="activeTab === 'new' || activeTab === 'all'" class="overflow-x-auto">
+                            <table class="min-w-full bg-white border border-gray-200">
+                                <thead class="bg-gray-50">
+                                    <tr>
+                                        <th class="py-3 px-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
+                                        <th class="py-3 px-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Customer</th>
+                                        <th class="py-3 px-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Bike</th>
+                                        <th class="py-3 px-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
+                                        <th class="py-3 px-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                                        <th class="py-3 px-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-gray-200">
+                                    <tr>
+                                        <td class="py-3 px-4">BM001</td>
+                                        <td class="py-3 px-4">John Smith</td>
+                                        <td class="py-3 px-4">Trek X-Caliber</td>
+                                        <td class="py-3 px-4">2023-05-10</td>
+                                        <td class="py-3 px-4"><span class="bg-yellow-100 text-yellow-800 text-xs px-2 py-1 rounded-full">New</span></td>
+                                        <td class="py-3 px-4">
+                                            <button @click="openServiceModal('BM001')" class="text-blue-600 hover:text-blue-900 mr-3">
+                                                <i class="fas fa-edit"></i> Diagnose
+                                            </button>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td class="py-3 px-4">BM005</td>
+                                        <td class="py-3 px-4">Emily Johnson</td>
+                                        <td class="py-3 px-4">Cannondale Trail</td>
+                                        <td class="py-3 px-4">2023-05-12</td>
+                                        <td class="py-3 px-4"><span class="bg-yellow-100 text-yellow-800 text-xs px-2 py-1 rounded-full">New</span></td>
+                                        <td class="py-3 px-4">
+                                            <button @click="openServiceModal('BM005')" class="text-blue-600 hover:text-blue-900 mr-3">
+                                                <i class="fas fa-edit"></i> Diagnose
+                                            </button>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <div x-show="activeTab === 'progress' || activeTab === 'all'" class="overflow-x-auto">
+                            <table class="min-w-full bg-white border border-gray-200" x-show="activeTab === 'progress' || activeTab === 'all'">
+                                <thead class="bg-gray-50" x-show="activeTab === 'progress'">
+                                    <tr>
+                                        <th class="py-3 px-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
+                                        <th class="py-3 px-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Customer</th>
+                                        <th class="py-3 px-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Bike</th>
+                                        <th class="py-3 px-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Cost</th>
+                                        <th class="py-3 px-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Est. Completion</th>
+                                        <th class="py-3 px-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                                        <th class="py-3 px-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-gray-200" x-show="activeTab === 'progress' || activeTab === 'all'">
+                                    <tr x-show="activeTab === 'progress' || activeTab === 'all'">
+                                        <td class="py-3 px-4">BM002</td>
+                                        <td class="py-3 px-4">Sarah Wilson</td>
+                                        <td class="py-3 px-4">Specialized Rockhopper</td>
+                                        <td class="py-3 px-4">$85.00</td>
+                                        <td class="py-3 px-4">2023-05-14</td>
+                                        <td class="py-3 px-4"><span class="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full">In Progress</span></td>
+                                        <td class="py-3 px-4">
+                                            <button @click="openServiceModal('BM002')" class="text-blue-600 hover:text-blue-900 mr-3">
+                                                <i class="fas fa-edit"></i> Update
+                                            </button>
+                                        </td>
+                                    </tr>
+                                    <tr x-show="activeTab === 'progress' || activeTab === 'all'">
+                                        <td class="py-3 px-4">BM004</td>
+                                        <td class="py-3 px-4">David Brown</td>
+                                        <td class="py-3 px-4">Giant Talon</td>
+                                        <td class="py-3 px-4">$135.00</td>
+                                        <td class="py-3 px-4">2023-05-15</td>
+                                        <td class="py-3 px-4"><span class="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full">In Progress</span></td>
+                                        <td class="py-3 px-4">
+                                            <button @click="openServiceModal('BM004')" class="text-blue-600 hover:text-blue-900 mr-3">
+                                                <i class="fas fa-edit"></i> Update
+                                            </button>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <div x-show="activeTab === 'completed' || activeTab === 'all'" class="overflow-x-auto">
+                            <table class="min-w-full bg-white border border-gray-200" x-show="activeTab === 'completed' || activeTab === 'all'">
+                                <thead class="bg-gray-50" x-show="activeTab === 'completed'">
+                                    <tr>
+                                        <th class="py-3 px-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
+                                        <th class="py-3 px-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Customer</th>
+                                        <th class="py-3 px-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Bike</th>
+                                        <th class="py-3 px-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Cost</th>
+                                        <th class="py-3 px-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Completed Date</th>
+                                        <th class="py-3 px-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                                        <th class="py-3 px-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-gray-200" x-show="activeTab === 'completed' || activeTab === 'all'">
+                                    <tr>
+                                        <td class="py-3 px-4">BM003</td>
+                                        <td class="py-3 px-4">Michael Davis</td>
+                                        <td class="py-3 px-4">Scott Scale</td>
+                                        <td class="py-3 px-4">$120.00</td>
+                                        <td class="py-3 px-4">2023-05-11</td>
+                                        <td class="py-3 px-4"><span class="bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full">Completed</span></td>
+                                        <td class="py-3 px-4">
+                                            <button @click="openServiceModal('BM003')" class="text-blue-600 hover:text-blue-900 mr-3">
+                                                <i class="fas fa-eye"></i> View
+                                            </button>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Service Modal -->
+        <div x-show="showServiceModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50" x-cloak>
+            <div @click.away="showServiceModal = false" class="bg-white rounded-lg shadow-xl w-full max-w-3xl overflow-hidden">
+                <div class="bg-primary text-white px-6 py-4 flex justify-between items-center">
+                    <h2 class="text-xl font-bold" x-text="'Service Details - ' + currentServiceId"></h2>
+                    <button @click="showServiceModal = false" class="text-white hover:text-gray-300 focus:outline-none">
+                        <i class="fas fa-times text-xl"></i>
+                    </button>
+                </div>
+                <div class="p-6">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                        <div>
+                            <h3 class="font-semibold text-lg mb-3">Bike Information</h3>
+                            <div class="bg-gray-50 p-4 rounded-lg">
+                                <div class="mb-2">
+                                    <span class="text-gray-600">Make:</span>
+                                    <input type="text" x-model="serviceDetails.make" class="w-full mt-1 px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                </div>
+                                <div class="mb-2">
+                                    <span class="text-gray-600">Model:</span>
+                                    <input type="text" x-model="serviceDetails.model" class="w-full mt-1 px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                </div>
+                                <div class="mb-2">
+                                    <span class="text-gray-600">Registration:</span>
+                                    <input type="text" x-model="serviceDetails.registration" class="w-full mt-1 px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                </div>
+                            </div>
+                        </div>
+                        <div>
+                            <h3 class="font-semibold text-lg mb-3">Customer Details</h3>
+                            <div class="bg-gray-50 p-4 rounded-lg">
+                                <div class="mb-2">
+                                    <span class="text-gray-600">Name:</span>
+                                    <input type="text" x-model="serviceDetails.customerName" class="w-full mt-1 px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                </div>
+                                <div class="mb-2">
+                                    <span class="text-gray-600">Phone:</span>
+                                    <input type="text" x-model="serviceDetails.phone" class="w-full mt-1 px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                </div>
+                                <div>
+                                    <span class="text-gray-600">Drop-off Date:</span>
+                                    <input type="date" x-model="serviceDetails.date" class="w-full mt-1 px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mb-6">
+                        <h3 class="font-semibold text-lg mb-3">Repair Details</h3>
+                        <div class="bg-gray-50 p-4 rounded-lg">
+                            <div class="mb-4">
+                                <label class="block text-gray-600 mb-2">Issues Found:</label>
+                                <textarea x-model="serviceDetails.issues" rows="3" class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"></textarea>
+                            </div>
+                            <div class="mb-4">
+                                <label class="block text-gray-600 mb-2">Work Performed:</label>
+                                <textarea x-model="serviceDetails.workDone" rows="3" class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"></textarea>
+                            </div>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                                <div>
+                                    <label class="block text-gray-600 mb-2">Estimated Completion:</label>
+                                    <input type="date" x-model="serviceDetails.estimatedCompletion" class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                </div>
+                                <div>
+                                    <label class="block text-gray-600 mb-2">Status:</label>
+                                    <select x-model="serviceDetails.status" class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                        <option value="1">Received</option>
+                                        <option value="2">Diagnosed</option>
+                                        <option value="3">In Progress</option>
+                                        <option value="4">Completed</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div>
+                                <label class="block text-gray-600 mb-2">Repair Cost ($):</label>
+                                <input type="number" step="0.01" x-model="serviceDetails.cost" class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                <p class="text-sm text-gray-500 mt-1">Set the repair cost based on parts and labor</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="flex justify-end space-x-3">
+                        <button @click="showServiceModal = false" class="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-500">
+                            Cancel
+                        </button>
+                        <button @click="saveServiceChanges()" class="bg-primary text-white px-4 py-2 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            Save Changes
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="bg-primary text-white p-6 mt-8">
+        <div class="container mx-auto">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
+                <div>
+                    <h3 class="text-xl font-bold mb-4">Track My Bike</h3>
+                    <p class="text-gray-300 mb-4">Your trusted service for tracking bike repairs and maintenance.</p>
+                    <div class="flex space-x-4">
+                        <a href="#" class="text-gray-300 hover:text-white">
+                            <i class="fab fa-facebook-f"></i>
+                        </a>
+                        <a href="#" class="text-gray-300 hover:text-white">
+                            <i class="fab fa-twitter"></i>
+                        </a>
+                        <a href="#" class="text-gray-300 hover:text-white">
+                            <i class="fab fa-instagram"></i>
+                        </a>
+                    </div>
+                </div>
+                <div>
+                    <h3 class="text-lg font-semibold mb-4">Quick Links</h3>
+                    <ul class="space-y-2">
+                        <li><a @click="setActiveTab('home')" class="text-gray-300 hover:text-white cursor-pointer">Home</a></li>
+                        <li><a @click="setActiveTab('book')" class="text-gray-300 hover:text-white cursor-pointer">Book a Repair</a></li>
+                        <li><a @click="setActiveTab('track')" class="text-gray-300 hover:text-white cursor-pointer">Track My Bike</a></li>
+                        <li><a @click="setActiveTab('contact')" class="text-gray-300 hover:text-white cursor-pointer">Contact Us</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h3 class="text-lg font-semibold mb-4">Services</h3>
+                    <ul class="space-y-2">
+                        <li><a href="#" class="text-gray-300 hover:text-white">Basic Service</a></li>
+                        <li><a href="#" class="text-gray-300 hover:text-white">Full Service</a></li>
+                        <li><a href="#" class="text-gray-300 hover:text-white">Wheel Alignment</a></li>
+                        <li><a href="#" class="text-gray-300 hover:text-white">Parts Replacement</a></li>
+                        <li><a href="#" class="text-gray-300 hover:text-white">Custom Builds</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h3 class="text-lg font-semibold mb-4">Contact</h3>
+                    <ul class="space-y-2">
+                        <li class="flex items-start">
+                            <i class="fas fa-map-marker-alt mt-1 mr-2"></i>
+                            <span>123 Bike Street<br>Mechanic Town, BK 12345</span>
+                        </li>
+                        <li class="flex items-center">
+                            <i class="fas fa-phone-alt mr-2"></i>
+                            <span>(555) 123-4567</span>
+                        </li>
+                        <li class="flex items-center">
+                            <i class="fas fa-envelope mr-2"></i>
+                            <span>service@trackmybike.example.com</span>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+            <div class="border-t border-gray-700 mt-8 pt-6 text-center text-gray-300">
+                <p>&copy; 2023 Track My Bike. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        function appData() {
+            return {
+                activeTab: 'home',
+                mobileMenu: false,
+                userLoggedIn: false,
+                userName: '',
+                showLoginModal: false,
+                showRegisterModal: false,
+                
+                // Login form
+                loginForm: {
+                    email: '',
+                    password: ''
+                },
+                loginError: '',
+                
+                // Register form
+                registerForm: {
+                    name: '',
+                    email: '',
+                    password: '',
+                    confirmPassword: ''
+                },
+                registerError: '',
+                
+                // Booking form
+                booking: {
+                    name: '',
+                    phone: '',
+                    email: '',
+                    date: '',
+                    make: '',
+                    model: '',
+                    registrationNumber: '',
+                    year: '',
+                    problemCategories: [],
+                    problemDescription: ''
+                },
+                bookingSubmitted: false,
+                generatedBookingId: '',
+                
+                // Contact form
+                contact: {
+                    name: '',
+                    email: '',
+                    subject: '',
+                    message: ''
+                },
+                contactSubmitted: false,
+                
+                // Tracking
+                trackingId: '',
+                trackingResult: false,
+                trackingNotFound: false,
+                currentTracking: {},
+                
+                // Service modal
+                showServiceModal: false,
+                currentServiceId: '',
+                serviceDetails: {},
+                changesSaved: false,
+                
+                // Sample repair data
+                repairSamples: [
+                    {
+                        id: 'BM001',
+                        customerName: 'John Smith',
+                        phone: '(555) 123-4567',
+                        make: 'Trek',
+                        model: 'X-Caliber',
+                        registration: 'TR-2021-1234',
+                        date: '2023-05-10',
+                        issues: 'Customer reports grinding sound from rear wheel, difficulty shifting gears',
+                        workDone: '',
+                        estimatedCompletion: '2023-05-13',
+                        status: 1,
+                        cost: ''
+                    },
+                    {
+                        id: 'BM002',
+                        customerName: 'Sarah Wilson',
+                        phone: '(555) 234-5678',
+                        make: 'Specialized',
+                        model: 'Rockhopper',
+                        registration: 'SP-2022-5678',
+                        date: '2023-05-11',
+                        issues: 'Brake pads worn, chain needs replacement, general tune-up',
+                        workDone: 'Replaced brake pads, installed new chain, adjusted derailleur',
+                        estimatedCompletion: '2023-05-14',
+                        status: 3,
+                        cost: '85.00'
+                    },
+                    {
+                        id: 'BM003',
+                        customerName: 'Michael Davis',
+                        phone: '(555) 345-6789',
+                        make: 'Scott',
+                        model: 'Scale',
+                        registration: 'SC-2020-9876',
+                        date: '2023-05-09',
+                        issues: 'Front suspension not working properly, creaking sound from bottom bracket',
+                        workDone: 'Serviced front suspension fork, replaced bottom bracket bearings',
+                        estimatedCompletion: '2023-05-11',
+                        status: 4,
+                        cost: '120.00'
+                    }
+                ],
+                
+                // Methods
+                setActiveTab(tab) {
+                    this.activeTab = tab;
+                    window.scrollTo(0, 0);
+                },
+                
+                loginWithGoogle() {
+                    // Simulate Google login for demo purposes
+                    this.userLoggedIn = true;
+                    this.userName = "Google User";
+                    this.showLoginModal = false;
+                    this.showRegisterModal = false;
+                    alert("Successfully logged in with Google!");
+                },
+                
+                loginWithEmail() {
+                    // Simple email/password login for demo
+                    if (this.loginForm.email === "user@example.com" && this.loginForm.password === "password123") {
+                        this.userLoggedIn = true;
+                        this.userName = "Demo User";
+                        this.loginError = '';
+                        this.showLoginModal = false;
+                    } else {
+                        this.loginError = "Invalid email or password. Try 'user@example.com' and 'password123' for demo.";
+                    }
+                },
+                
+                registerWithEmail() {
+                    // Simple registration for demo
+                    if (this.registerForm.password !== this.registerForm.confirmPassword) {
+                        this.registerError = "Passwords don't match";
+                        return;
+                    }
+                    
+                    this.userLoggedIn = true;
+                    this.userName = this.registerForm.name;
+                    this.registerError = '';
+                    this.showRegisterModal = false;
+                    alert("Registration successful! You are now logged in.");
+                },
+                
+                logout() {
+                    this.userLoggedIn = false;
+                    this.userName = '';
+                    this.activeTab = 'home';
+                },
+                
+                submitRepair() {
+                    if (!this.userLoggedIn) {
+                        this.showLoginModal = true;
+                        return;
+                    }
+                    
+                    // Generate random ID for demonstration
+                    const randomId = 'BM' + String(Math.floor(Math.random() * 900) + 100);
+                    this.generatedBookingId = randomId;
+                    this.bookingSubmitted = true;
+                    
+                    // Reset form after submission
+                    setTimeout(() => {
+                        window.scrollTo(0, document.getElementById('book').offsetTop);
+                    }, 100);
+                },
+                
+                submitContact() {
+                    this.contactSubmitted = true;
+                    // Reset form after submission
+                    setTimeout(() => {
+                        this.contact = {
+                            name: '',
+                            email: '',
+                            subject: '',
+                            message: ''
+                        };
+                    }, 2000);
+                },
+                
+                trackRepair() {
+                    if (!this.userLoggedIn) {
+                        this.showLoginModal = true;
+                        return;
+                    }
+                    
+                    // Check if the tracking ID exists in our sample data
+                    const foundRepair = this.repairSamples.find(repair => repair.id === this.trackingId);
+                    
+                    if (foundRepair) {
+                        this.currentTracking = foundRepair;
+                        this.trackingResult = true;
+                        this.trackingNotFound = false;
+                    } else {
+                        this.trackingResult = false;
+                        this.trackingNotFound = true;
+                    }
+                    
+                    // Reset after a while if not found
+                    if (this.trackingNotFound) {
+                        setTimeout(() => {
+                            this.trackingNotFound = false;
+                        }, 5000);
+                    }
+                },
+                
+                getStatusText(status) {
+                    const statusMap = {
+                        1: 'Received',
+                        2: 'Diagnosed',
+                        3: 'In Progress',
+                        4: 'Completed'
+                    };
+                    return statusMap[status] || 'Unknown';
+                },
+                
+                openServiceModal(id) {
+                    this.currentServiceId = id;
+                    const repair = this.repairSamples.find(r => r.id === id);
+                    
+                    if (repair) {
+                        // Clone the object to avoid direct modification
+                        this.serviceDetails = JSON.parse(JSON.stringify(repair));
+                    } else {
+                        this.serviceDetails = {
+                            id: id,
+                            customerName: '',
+                            phone: '',
+                            make: '',
+                            model: '',
+                            registration: '',
+                            date: '',
+                            issues: '',
+                            workDone: '',
+                            estimatedCompletion: '',
+                            status: 1,
+                            cost: ''
+                        };
+                    }
+                    
+                    this.showServiceModal = true;
+                },
+                
+                saveServiceChanges() {
+                    // Find the repair in our sample data
+                    const index = this.repairSamples.findIndex(r => r.id === this.currentServiceId);
+                    
+                    if (index !== -1) {
+                        // Update existing repair
+                        this.repairSamples[index] = this.serviceDetails;
+                    } else {
+                        // Add new repair
+                        this.repairSamples.push(this.serviceDetails);
+                    }
+                    
+                    // Show success message and close modal
+                    alert('Service details updated successfully!');
+                    this.showServiceModal = false;
+                }
+            };
+        }
+    </script>
+</body>
+</html>
